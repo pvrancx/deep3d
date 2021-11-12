@@ -14,7 +14,8 @@ def extract_frames(
         max_offs: int = 25
 ):
     """
-    Extract frames from video file. Randomizes offset between subsequent extracted frames
+    Extract frames from video file. Randomizes offset between subsequent extracted frames.
+    Extracted frames will be stored as 'output_path/output_name_frame_IDX.jpg'
 
     :param vid_path: path to video file
     :param output_path: directory to store results in
@@ -45,7 +46,7 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser(description="Extract movie frames")
 
         parser.add_argument('input', type=str, help='Input movie file')
-        parser.add_argument('--output_path', type=str, default='.', help='output directory')
+        parser.add_argument('--output_path', type=str, default='./data', help='output directory')
         parser.add_argument('--base_name', tupe=str, default='movie', help='base output file name')
         parser. add_argument('--min_offset', type=int, default=2, help='min offset between frames')
         parser.add_argument('--max_offset', type=int, default=25, help='max offset between frames')

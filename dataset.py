@@ -47,10 +47,21 @@ class StereoVisionDataset(VisionDataset):
         left = frame.crop((0, 0, w2, h))
         right = frame.crop((w2, 0, w, h))
 
-        left, right = self.transforms(left, right)
+        if self.transforms:
+            left, right = self.transforms(left, right)
 
-        return {'left': left, 'right': right, }
+        return {'left': left, 'right': right}
 
     def __len__(self):
         """Return the total number of images in the dataset."""
         return len(self.img_paths)
+
+
+if __name__ == '__main__':
+    def _main():
+        dataset = StereoVisionDataset('./data')
+        print(len(dataset))
+        x, y = dataset[0].values()
+        x.show()
+        y.show()
+    _main()
