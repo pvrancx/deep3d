@@ -6,7 +6,7 @@ from torchvision.datasets import VisionDataset
 from torchvision.datasets.folder import is_image_file
 
 
-def _load_images(root_path: str):
+def load_images(root_path: str):
     """return paths for all images found in folder and subfolders"""
     images = []
     assert os.path.isdir(root_path), '%s is not a valid directory' % root_path
@@ -31,7 +31,7 @@ class StereoVisionDataset(VisionDataset):
         Initialize this dataset class.
         """
         super(StereoVisionDataset, self).__init__(root, transforms=transforms)
-        self.img_paths = sorted(_load_images(self.root))  # get image paths
+        self.img_paths = sorted(load_images(self.root))  # get image paths
 
     def __getitem__(self, index: int):
         """
@@ -48,7 +48,7 @@ class StereoVisionDataset(VisionDataset):
         right = frame.crop((w2, 0, w, h))
 
         if self.transforms:
-            left, right = self.transforms(left, right)
+            left, right = self.transforms(left), self.transforms(right)
 
         return {'left': left, 'right': right}
 

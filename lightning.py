@@ -26,7 +26,7 @@ class Deep3dModule(pl.LightningModule):
         :param learning_rate: learning rate for optimizer
         """
         super().__init__()
-        self.model = Deep3dNet((384, 160))
+        self.model = Deep3dNet((160, 384))
         self.save_hyperparameters()
 
     def forward(self, x):
@@ -72,16 +72,16 @@ class Deep3dDataModule(pl.LightningDataModule):
 
         self.train_transform = transforms.Compose(
             [
-                transforms.Resize(size=(432, 180)),
-                transforms.RandomCrop(size=(384, 160)),
+                transforms.Resize(size=(180, 432)),
+                transforms.CenterCrop(size=(160, 384)),
                 transforms.ToTensor()
             ]
         )
 
         self.test_transform = transforms.Compose(
             [
-                transforms.Resize(size=(432, 180)),
-                transforms.CenterCrop(size=(384, 160)),
+                transforms.Resize(size=(180, 432)),
+                transforms.CenterCrop(size=(160, 384)),
                 transforms.ToTensor()
             ]
         )
@@ -132,6 +132,16 @@ if __name__ == '__main__':
     def _main():
         model = Deep3dModule()
         print(model(torch.randn(5, 3, 384, 160)).shape)
-        model.training_step((torch.randn(5, 3, 384, 160), torch.randn(5, 3, 384, 160)), 1)
+        datamodule = Deep3dDataModule(root='./data', batch_size=2, num_workers=0)
+        datamodule.setup()
+        dl = datamodule.train_dataloader()
+        x, y = next(iter(dl)).values()
+        print(x)
+
+        model.training_step((x, y), 1)
+
+        transforms.ToPILImage()(x[0, ]).show()
+        transforms.ToPILImage()(y[0, ]).show()
+
     _main()
 
