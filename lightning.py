@@ -8,6 +8,7 @@ from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADER
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import random_split, DataLoader
 from torchvision.transforms import transforms
+from torchvision.utils import make_grid
 
 from dataset import StereoVisionDataset
 from deep3d import Deep3dNet
@@ -51,6 +52,13 @@ class Deep3dModule(pl.LightningModule):
         y_hat = self(x)
         loss = nn.functional.l1_loss(y, y_hat)
         self.log('val_loss', loss)
+        if idx == 0:
+            inp = x[-3:]
+            gt = y[-3:]
+            samples = y_hat[-3:]
+            imgs = torch.stack([inp, gt, samples]).view(-1, *samples.shape[-3:])
+            grid = make_grid(imgs)
+            self.logger.experiment.add_image(grid)
         return loss
 
     def configure_optimizers(self):
@@ -135,11 +143,11 @@ class Deep3dDataModule(pl.LightningDataModule):
 if __name__ == '__main__':
     def _main():
         model = Deep3dModule()
-        print(model(torch.randn(5, 3, 384, 160)).shape)
+        print(model(torch.randn(5, 3, 160, 384)).shape)
         datamodule = Deep3dDataModule(root='./data', batch_size=2, num_workers=0)
         datamodule.setup()
         dl = datamodule.train_dataloader()
-        x, y = next(iter(dl)).values()
+        x, y = next(iter(dl))
         print(x)
 
         model.training_step((x, y), 1)
