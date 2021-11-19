@@ -50,7 +50,7 @@ class StereoVisionDataset(VisionDataset):
         if self.transforms:
             left, right = self.transforms(left), self.transforms(right)
 
-        return {'left': left, 'right': right}
+        return left, right
 
     def __len__(self):
         """Return the total number of images in the dataset."""

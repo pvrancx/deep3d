@@ -98,7 +98,7 @@ class Deep3dNet(nn.Module):
         out7 = self.fc2(out6)
         out8 = self.fc3(out7)
 
-        pred5 = self.deconv5(out8.view(-1, 33, 12, 5))
+        pred5 = self.deconv5(out8.view(-1, 33, 5, 12))
         pred4 = self.deconv4(out4)
         pred3 = self.deconv3(out3)
         pred2 = self.deconv2(out2)
