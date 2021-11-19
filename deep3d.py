@@ -16,6 +16,7 @@ def bilinear_weights(size: int, stride: int):
     c = (2 * stride - 1 - (stride % 2)) / size
     rows = torch.ones((size, size)) * torch.arange(size).view(-1, 1)
     cols = torch.ones((size, size)) * torch.arange(size).view(1, -1)
+    # note: paper uses abs(i / (S - C)), code uses abs(i / S - C)
     weight = (1 - torch.abs(rows / (stride - c))) * (1 - torch.abs(cols / (stride - c)))
     return weight
 
@@ -43,7 +44,7 @@ class Deep3dNet(nn.Module):
         feat_size = vgg11_net.features(torch.randn(1, 3, *input_shape)).shape[-2:]
 
         # extract trained vgg feature layers
-        # Note: paper mentions vgg16 but repo uses torchvision's vgg11 architecture
+        # Note: paper mentions vgg16 but repo uses vgg11 architecture
         layers = list(vgg11_net.features.children())
         self.feat1 = nn.Sequential(*layers[:3])
         self.feat2 = nn.Sequential(*layers[3:6])
@@ -122,3 +123,4 @@ class Deep3dNet(nn.Module):
 if __name__ == '__main__':
     model = Deep3dNet((384, 160))
     print(model(torch.randn(1, 3, 384, 160)).shape)
+    print(model.fc1[0].weight.shape)
