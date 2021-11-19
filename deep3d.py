@@ -12,6 +12,14 @@ def create_fc_group(n_in: int, n_hidden: int):
     )
 
 
+def bilinear_weights(size: int, stride: int):
+    c = (2 * stride - 1 - (stride % 2)) / size
+    rows = torch.ones((size, size)) * torch.arange(size).view(-1, 1)
+    cols = torch.ones((size, size)) * torch.arange(size).view(1, -1)
+    weight = (1 - torch.abs(rows / (stride - c))) * (1 - torch.abs(cols / (stride - c)))
+    return weight
+
+
 class DeconvBlock(nn.Module):
     def __init__(self, n_features, kernel_size: int, stride: int, padding: int):
         super().__init__()
@@ -84,8 +92,10 @@ class Deep3dNet(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.ConvTranspose2d):
-                # todo: add bilinear init from paper
-                pass
+                with torch.no_grad():
+                    m.weight[:, :, ] = bilinear_weights(m.kernel_size[0], m.stride[0])
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         out1 = self.feat1(x)
