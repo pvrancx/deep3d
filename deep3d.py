@@ -12,6 +12,15 @@ def create_fc_group(n_in: int, n_hidden: int):
     )
 
 
+def bilinear_weights(size: int, stride: int):
+    c = (2 * stride - 1 - (stride % 2)) / size
+    rows = torch.ones((size, size)) * torch.arange(size).view(-1, 1)
+    cols = torch.ones((size, size)) * torch.arange(size).view(1, -1)
+    # note: paper uses abs(i / (S - C)), code uses abs(i / S - C)
+    weight = (1 - torch.abs(rows / (stride - c))) * (1 - torch.abs(cols / (stride - c)))
+    return weight
+
+
 class DeconvBlock(nn.Module):
     def __init__(self, n_features, kernel_size: int, stride: int, padding: int):
         super().__init__()
@@ -35,7 +44,7 @@ class Deep3dNet(nn.Module):
         feat_size = vgg11_net.features(torch.randn(1, 3, *input_shape)).shape[-2:]
 
         # extract trained vgg feature layers
-        # Note: paper mentions vgg16 but repo uses torchvision's vgg11 architecture
+        # Note: paper mentions vgg16 but repo uses vgg11 architecture
         layers = list(vgg11_net.features.children())
         self.feat1 = nn.Sequential(*layers[:3])
         self.feat2 = nn.Sequential(*layers[3:6])
@@ -84,8 +93,10 @@ class Deep3dNet(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.ConvTranspose2d):
-                # todo: add bilinear init from paper
-                pass
+                with torch.no_grad():
+                    m.weight[:, :, ] = bilinear_weights(m.kernel_size[0], m.stride[0])
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         out1 = self.feat1(x)
@@ -112,3 +123,4 @@ class Deep3dNet(nn.Module):
 if __name__ == '__main__':
     model = Deep3dNet((384, 160))
     print(model(torch.randn(1, 3, 384, 160)).shape)
+    print(model.fc1[0].weight.shape)

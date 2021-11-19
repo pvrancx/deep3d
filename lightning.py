@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import random_split, DataLoader
 from torchvision.transforms import transforms
 
@@ -19,11 +20,13 @@ def shift(tensor, i: int):
 
 
 class Deep3dModule(pl.LightningModule):
-    def __init__(self, learning_rate: float = 1e-3):
+    def __init__(self, learning_rate: float = 2e-3, scheduler_epochs=250):
         """
         Create Deep3dModule
 
         :param learning_rate: learning rate for optimizer
+        :param scheduler_epochs: number of epochs for learning rate scheduling
+
         """
         super().__init__()
         self.model = Deep3dNet((160, 384))
@@ -51,8 +54,9 @@ class Deep3dModule(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
-        return optimizer
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate)
+        scheduler = StepLR(optimizer, step_size=int(self.hparams.scheduler_epochs * 0.1), gamma=0.1)
+        return [optimizer], [scheduler]
 
 
 class Deep3dDataModule(pl.LightningDataModule):
