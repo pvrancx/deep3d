@@ -71,8 +71,7 @@ class Deep3dNet(nn.Module):
         self.up = nn.Sequential(
             nn.ConvTranspose2d(33, 33, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1)),
             nn.ReLU(),
-            nn.Conv2d(33, 33, kernel_size=(3, 3), padding=(1, 1)),
-            nn.ReLU()
+            nn.Conv2d(33, 33, kernel_size=(3, 3), padding=(1, 1))
         )
 
         self._initialize_weights()
@@ -83,20 +82,20 @@ class Deep3dNet(nn.Module):
                 if 'feat' in n:
                     # these layers are initialised from trained vgg
                     continue
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.uniform_(m.weight, -0.01, 0.01)
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    nn.init.uniform_(m.bias, -0.01, 0.01)
             elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+                nn.init.uniform_(m.weight, -0.01, 0.01)
+                nn.init.uniform_(m.bias, -0.01, 0.01)
             elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
+                nn.init.uniform_(m.weight, -0.01, 0.01)
+                nn.init.uniform_(m.bias, -0.01, 0.01)
             elif isinstance(m, nn.ConvTranspose2d):
                 with torch.no_grad():
                     m.weight[:, :, ] = bilinear_weights(m.kernel_size[0], m.stride[0])
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    nn.init.uniform_(m.bias, -0.01, 0.01)
 
     def forward(self, x):
         out1 = self.feat1(x)

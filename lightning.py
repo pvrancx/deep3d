@@ -21,7 +21,7 @@ def shift(tensor, i: int):
 
 
 class Deep3dModule(pl.LightningModule):
-    def __init__(self, learning_rate: float = 2e-3, scheduler_epochs=250):
+    def __init__(self, learning_rate: float = 2e-3, momentum=0.9, scheduler_epochs=250):
         """
         Create Deep3dModule
 
@@ -36,7 +36,7 @@ class Deep3dModule(pl.LightningModule):
     def forward(self, x):
         pred = self.model(x)
         probs = nn.functional.softmax(pred, dim=1)
-        shifted = torch.stack([shift(x, i) for i in range(33)], -1)
+        shifted = torch.stack([shift(x, i) for i in range(-16, 17)], -1)
         out = torch.einsum('bchwd,bdhw->bchw', shifted, probs)
         return out
 
@@ -53,16 +53,20 @@ class Deep3dModule(pl.LightningModule):
         loss = nn.functional.l1_loss(y, y_hat)
         self.log('val_loss', loss)
         if idx == 0:
-            inp = x[-3:]
-            gt = y[-3:]
-            samples = y_hat[-3:]
+            indx = torch.randint(x.shape[0],size=(3,), device=self.device)
+            inp = x.index_select(0, indx)
+            gt = y.index_select(0, indx)
+            samples = y_hat.index_select(0, indx)
             imgs = torch.stack([inp, gt, samples]).view(-1, *samples.shape[-3:])
-            grid = make_grid(imgs)
-            self.logger.experiment.add_image(grid)
+            grid = make_grid(imgs, nrow=3)
+            depth = nn.functional.softmax(self.model(inp[:1,]), dim=1).detach().view(-1, 1, 160, 384)
+            depth_grid = make_grid(depth, nrow=6)
+            self.logger.experiment.add_image("output image", grid, global_step=self.trainer.global_step)
+            self.logger.experiment.add_image("depth", depth_grid, global_step=self.trainer.global_step)
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.hparams.learning_rate, momentum=self.hparams.momentum)
         scheduler = StepLR(optimizer, step_size=int(self.hparams.scheduler_epochs * 0.1), gamma=0.1)
         return [optimizer], [scheduler]
 
