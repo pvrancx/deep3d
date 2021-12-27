@@ -38,7 +38,7 @@ class StereoVisionDataset(VisionDataset):
         Return a single data point.
         :param index: an integer in [0, len(dataset)[ for data indexing
         """
-        # read a image given a random integer index
+        # read an image given a random integer index
         img_path = self.img_paths[index]
         frame = Image.open(img_path).convert('RGB')
         # split AB image into A and B
